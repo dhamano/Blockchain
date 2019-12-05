@@ -1,10 +1,10 @@
 import hashlib
 import requests
+from datetime import datetime
 
 import sys
 import json
 
-mine_url = "http://0.0.0.0:5000/"
 DIFFICULTY = 6
 coins_mined = 0
 
@@ -16,12 +16,15 @@ def proof_of_work(block):
     in an effort to find a number that is a valid proof
     :return: A valid proof for the provided block
     """
+    # print("START PROOF OF WORK")
     block_string = json.dumps(block, sort_keys=True)
     proof = 0
-    
+    start_time = datetime.today()
+    # print(f"\n\nlast block: {block_string}\n\n")
     while valid_proof(block_string, proof) is False:
         proof += 1
-
+    end_time = datetime.today()
+    print(f"TIME TAKEN: {end_time - start_time}")
     return proof
 
 def valid_proof(block_string, proof):
@@ -35,10 +38,10 @@ def valid_proof(block_string, proof):
     correct number of leading zeroes.
     :return: True if the resulting hash is a valid proof, False otherwise
     """
-
     guess = f'{block_string}{proof}'.encode()
     guess_hash = hashlib.sha256(guess).hexdigest()
-    # print(f"DIFFICULTY: {DIFFICULTY} | GUESS_HASH: {guess_hash} | IS_VALID: {guess_hash[:DIFFICULTY] == '0' * DIFFICULTY}")
+    # if guess_hash[:DIFFICULTY] == "0" * DIFFICULTY:
+    #     print(f"DIFFICULTY: {DIFFICULTY} | GUESS_HASH: {guess_hash} | IS_VALID: {guess_hash[:DIFFICULTY] == '0' * DIFFICULTY}")
 
     return guess_hash[:DIFFICULTY] == "0" * DIFFICULTY
 
@@ -74,16 +77,21 @@ if __name__ == '__main__':
 
         # When found, POST it to the server {"proof": new_proof, "id": id}
         id = data["last_block"]["index"] + 1
+        # post_data = {"proof":new_proof}
+        # post_data = {"id":id}
+        # post_data = {}
+        print(f'NEW BLOCK ID: {id}')
         post_data = {"proof":new_proof, "id":id}
 
         r = requests.post(url=node + "/mine", json=post_data)
-        # print(f"Response: {r}")
         data = r.json()
-        # print(f"mined? {data}")
 
         # TODO: If the server responds with a 'message' 'New Block Forged'
         # add 1 to the number of coins mined and print it.  Otherwise,
         # print the message from the server.
-        if data["message"] == "New Block Forged":
-            coins_mined += 1
-            print(f"COINS MINED: {coins_mined}")
+        if "message" in data:
+            if data["message"] == "New Block Forged":
+                coins_mined += 1
+                print(f"COINS MINED: {coins_mined} | Difficulty: {DIFFICULTY}")
+        else:
+            print(f"Error: {data}")

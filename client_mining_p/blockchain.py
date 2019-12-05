@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from flask import Flask, jsonify, request
 
-DIFFICULTY = 6
+DIFFICULTY = 5
 
 class Blockchain(object):
     def __init__(self):
@@ -30,7 +30,7 @@ class Blockchain(object):
         :param previous_hash: (Optional) <str> Hash of previous Block
         :return: <dict> New Block
         """
-
+        print("NEW BLOCK")
         block = {
             'index': len(self.chain) + 1,
             'timestamp': time(),
@@ -43,6 +43,7 @@ class Blockchain(object):
         self.current_transactions = []
         # Append the chain to the block
         self.chain.append(block)
+        # print(f"CHAIN: {self.chain}")
         # Return the new block
         return block
 
@@ -84,7 +85,7 @@ class Blockchain(object):
         return self.chain[-1]
 
 
-    # def proof_of_work(self, block):
+    # def proof_of_work(self, block): # remove mining on server
     #     """
     #     Simple Proof of Work Algorithm
     #     Stringify the block and look for a proof.
@@ -115,11 +116,10 @@ class Blockchain(object):
         """
         # TODO
         # return True or False
-
+        # print(f"\n\nSTART VALID PROOF | LAST BLOCK: {blockchain.last_block}\n\n")
         guess = f'{block_string}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
-        # if guess_hash[:DIFFICULTY] == "0" * DIFFICULTY:
-        #     print(f"GUESS_HASH: {guess_hash}")
+        # print(f'GUESS_HASH: {guess_hash} | {guess_hash[:DIFFICULTY] == "0" * DIFFICULTY}')
 
         return guess_hash[:DIFFICULTY] == "0" * DIFFICULTY
 
@@ -136,49 +136,48 @@ blockchain = Blockchain()
 
 @app.route('/mine', methods=['POST'])
 def mine():
-    # # Run the proof of work algorithm to get the next proof
-    # proof = blockchain.proof_of_work(blockchain.last_block)
+    """ old code for mining on server
+    # Run the proof of work algorithm to get the next proof
+    proof = blockchain.proof_of_work(blockchain.last_block)
 
-    # # Forge the new Block by adding it to the chain with the proof
-    # previous_hash = blockchain.hash(blockchain.last_block)
-    # new_block = blockchain.new_block(proof, previous_hash)
+    # Forge the new Block by adding it to the chain with the proof
+    previous_hash = blockchain.hash(blockchain.last_block)
+    new_block = blockchain.new_block(proof, previous_hash)
 
-    # response = {
-    #     'block': new_block
-    # }
+    response = {
+        'block': new_block
+    }
 
-    # return jsonify(response), 200
-    # print(f"MINE API")
+    return jsonify(response), 200
+    # """
+
     data = request.get_json()
-    # print(f"DATA: {data}")
-    if data["proof"] is not None and data["id"] is not None:
-        if data["id"] < len(blockchain.chain):
-            # print('NO ID')
+    if "proof" not in data or "id" not in data:
+        response = {"error": ""}
+        if "proof" not in data and "id" not in data:
+            response["error"] = 'POST request must include proof and id'
+        elif "proof" not in data:
+            response["error"] = 'POST request must include proof'
+        else:
+            response["error"] = 'POST request must include id'
+        return jsonify(response), 400     
+    else:
+        # print(f"\n\nblockchain length: {len(blockchain.chain)} | id: {data['id']}\n\n")
+        if data["id"] <= len(blockchain.chain):
+            # print("\n\ndata id is less than blockchain\n\n")
             return jsonify({ 'error': 'Block already claimed' }), 400
         proof = data["proof"]
-        # print(f"PROOF: {proof}")
-        last_block = json.dumps(blockchain.last_block, sort_keys=True)
-        is_valid = blockchain.valid_proof(last_block, proof)
+        block_string = json.dumps(blockchain.last_block, sort_keys=True)
+        is_valid = blockchain.valid_proof(block_string, proof)
         # print(f"IS_VALID: {is_valid}")
         if is_valid:
-            # print('VALID')
+            # print('IS VALID')
+            previous_hash = blockchain.hash(blockchain.last_block)
+            new_block = blockchain.new_block(proof, previous_hash)
             return jsonify({ "message": "New Block Forged" }), 200
         else:
-            # print('NOT VALID')
-            return jsonify({ "message": "No New Block"}), 400
-    else:
-        response = {}
-        if data["proof"] is None and data["id"] is None:
-            response['error'] = 'POST request must include proof and id'
-        elif data["proof"] is None:
-            response['error'] = 'POST request must include proof'
-        else:
-            response['error'] == 'POST request must include id'
-
-        # print('ERROR')
-        return jsonify(response), 400                
-        
-
+            print("IS NOT VALID")
+            return jsonify({ "message": "No New Block"}), 400           
 
 
 @app.route('/chain', methods=['GET'])
@@ -191,7 +190,6 @@ def full_chain():
 
 @app.route('/last_block', methods=['GET'])
 def last_block():
-    # print(f"last_id: {blockchain.last_block}")
     response = {
         'last_block': blockchain.last_block,
         'difficulty': DIFFICULTY
