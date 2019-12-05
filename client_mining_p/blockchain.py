@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from flask import Flask, jsonify, request
 
-DIFFICULTY = 5
+DIFFICULTY = 6
 
 class Blockchain(object):
     def __init__(self):
@@ -30,7 +30,7 @@ class Blockchain(object):
         :param previous_hash: (Optional) <str> Hash of previous Block
         :return: <dict> New Block
         """
-        print("NEW BLOCK")
+        # print("NEW BLOCK")
         block = {
             'index': len(self.chain) + 1,
             'timestamp': time(),
@@ -176,7 +176,7 @@ def mine():
             new_block = blockchain.new_block(proof, previous_hash)
             return jsonify({ "message": "New Block Forged" }), 200
         else:
-            print("IS NOT VALID")
+            # print("IS NOT VALID")
             return jsonify({ "message": "No New Block"}), 400           
 
 

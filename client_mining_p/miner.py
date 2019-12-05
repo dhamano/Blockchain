@@ -80,7 +80,7 @@ if __name__ == '__main__':
         # post_data = {"proof":new_proof}
         # post_data = {"id":id}
         # post_data = {}
-        print(f'NEW BLOCK ID: {id}')
+        # print(f'NEW BLOCK ID: {id}')
         post_data = {"proof":new_proof, "id":id}
 
         r = requests.post(url=node + "/mine", json=post_data)
@@ -94,4 +94,4 @@ if __name__ == '__main__':
                 coins_mined += 1
                 print(f"COINS MINED: {coins_mined} | Difficulty: {DIFFICULTY}")
         else:
-            print(f"Error: {data}")
+            print(f"Error: {data['error']}")
