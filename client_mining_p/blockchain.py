@@ -150,7 +150,43 @@ def mine():
 
     return jsonify(response), 200
     # """
+    """ # Lecture Version
+    try:
+        values = r.get_json()
+    except ValueError:
+        print("Error: Non-json response")
+        print("Response returned:")
+        print(r)
+        return "Error" # TODO Handle error
 
+    required = ['proof', 'id']
+    if not all(k values for k in required):
+        response = { 'message': "Missing Values"}
+        return jsonify(response), 400
+
+    submitted_proof = values['proof']
+
+    # Determine if proof is valid
+    last_block = blockchain.last_block
+    last_block_string = json.dumps(last_block, sort_keys=True)
+    if blockchain.valid_proof(last_block_string, submitted_proof):
+        # Forge new Block by adding it to the chain with the proof
+        previous_hash = blockchain.hash(blockchain.last_block)
+        new_block = blockchain.new_block(submitted_proof, previous_hash)
+
+        response = {
+            'message': "New Block Forged",
+            'block': new_block
+        }
+        return jsonify(response), 200
+    else:
+        response = {
+            'message': "Proof invalid or already submitted"
+        }
+        return jsonify(response), 200
+    #"""
+
+    #""" Mine own code
     data = request.get_json()
     if "proof" not in data or "id" not in data:
         response = {"error": ""}
@@ -165,7 +201,7 @@ def mine():
         # print(f"\n\nblockchain length: {len(blockchain.chain)} | id: {data['id']}\n\n")
         if data["id"] <= len(blockchain.chain):
             # print("\n\ndata id is less than blockchain\n\n")
-            return jsonify({ 'error': 'Block already claimed' }), 400
+            return jsonify({ 'error': 'Block already claimed' }), 200
         proof = data["proof"]
         block_string = json.dumps(blockchain.last_block, sort_keys=True)
         is_valid = blockchain.valid_proof(block_string, proof)
@@ -177,7 +213,8 @@ def mine():
             return jsonify({ "message": "New Block Forged" }), 200
         else:
             # print("IS NOT VALID")
-            return jsonify({ "message": "No New Block"}), 400           
+            return jsonify({ "message": "No New Block"}), 400
+    # """      
 
 
 @app.route('/chain', methods=['GET'])

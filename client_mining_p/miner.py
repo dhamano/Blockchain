@@ -72,19 +72,29 @@ if __name__ == '__main__':
             break
 
         # TODO: Get the block from `data` and use it to look for a new proof
+        # breakpoint() # opens python debugger
         DIFFICULTY = data["difficulty"]
         new_proof = proof_of_work(data["last_block"])
 
         # When found, POST it to the server {"proof": new_proof, "id": id}
-        id = data["last_block"]["index"] + 1
+        block_id = data["last_block"]["index"] + 1
         # post_data = {"proof":new_proof}
         # post_data = {"id":id}
         # post_data = {}
         # print(f'NEW BLOCK ID: {id}')
-        post_data = {"proof":new_proof, "id":id}
+        post_data = {"proof":new_proof, "id":block_id, "user_id": id}
 
         r = requests.post(url=node + "/mine", json=post_data)
-        data = r.json()
+        # data = r.json()
+        # """
+        try:
+            data = r.json()
+        except ValueError:
+            print("Error: Non-json response")
+            print("Response returned:")
+            print(data)
+            break
+        #"""
 
         # TODO: If the server responds with a 'message' 'New Block Forged'
         # add 1 to the number of coins mined and print it.  Otherwise,
@@ -92,6 +102,6 @@ if __name__ == '__main__':
         if "message" in data:
             if data["message"] == "New Block Forged":
                 coins_mined += 1
-                print(f"COINS MINED: {coins_mined} | Difficulty: {DIFFICULTY}")
+                print(f"COINS MINED: {coins_mined} | Difficulty: {DIFFICULTY} | block: {data['block']}")
         else:
             print(f"Error: {data['error']}")
